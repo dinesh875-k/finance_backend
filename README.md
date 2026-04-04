@@ -1,72 +1,153 @@
-# Finance Dashboard API
+<h1>Finance Dashboard API</h1>
 
-A backend API for managing financial records with role-based access control .
+<p>
+  A backend API for managing financial records with role-based access control,
+  built as part of the Zorvyn Backend Intern assessment.
+</p>
 
-## Tech Choices & Assumptions
+<h2>Tech Choices and Assumptions</h2>
+<ul>
+  <li>
+    <strong>FastAPI</strong> — I used FastAPI because it is the Python backend framework I work with most often.
+    It let me build the project quickly while keeping the structure clean and easy to review.
+  </li>
+  <li>
+    <strong>SQLite</strong> — I chose SQLite so the project can be cloned and run without any extra database setup.
+    Since the app uses SQLAlchemy, switching to PostgreSQL later only requires changing the database URL.
+  </li>
+  <li>
+    <strong>JWT Authentication</strong> — Authentication is handled with JWT tokens that expire after 30 minutes.
+    For a production version, I would extend this with refresh tokens and stronger session handling.
+  </li>
+  <li>
+    <strong>Free-text Categories</strong> — Categories are intentionally flexible instead of being limited to a fixed enum.
+    That keeps the API closer to how finance tools are usually used in practice.
+  </li>
+</ul>
 
-- **FastAPI** — I've been using it in my personal projects (Market Data Service, Signal Trade Automation) and it's the framework I'm most productive in.
-- **SQLite** — Chose this over PostgreSQL so you can clone and run without Docker or database setup. The SQLAlchemy layer is database-agnostic, so switching to Postgres only requires changing the connection URL.
-- **JWT auth** — Tokens expire after 30 minutes. In production, I'd add refresh tokens, but kept it simple here.
-- **Categories are free-text** — I didn't use a strict enum for categories because in real finance tools, users want flexibility to create their own categories.
+<h2>Quick Start</h2>
 
-## Quick Start
-```bash
-# Clone and setup
-git clone 
+<pre><code>git clone &lt;your-repo-url&gt;
 cd finance-backend
 pip install -r requirements.txt
-
-# Seed the database with test data
 python seed.py
+uvicorn app.main:app --reload</code></pre>
 
-# Run the server
-uvicorn app.main:app --reload
-```
+<p><strong>API Docs:</strong> <code>http://127.0.0.1:8000/docs</code></p>
 
-API docs available at: http://127.0.0.1:8000/docs
+<h2>Test Credentials</h2>
 
-## Test Credentials
+<table>
+  <thead>
+    <tr>
+      <th>Role</th>
+      <th>Username</th>
+      <th>Password</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Admin</td>
+      <td>admin</td>
+      <td>admin123</td>
+    </tr>
+    <tr>
+      <td>Analyst</td>
+      <td>analyst</td>
+      <td>analyst123</td>
+    </tr>
+    <tr>
+      <td>Viewer</td>
+      <td>viewer</td>
+      <td>viewer123</td>
+    </tr>
+  </tbody>
+</table>
 
-| Role    | Username | Password    |
-|---------|----------|-------------|
-| Admin   | admin    | admin123    |
-| Analyst | analyst  | analyst123  |
-| Viewer  | viewer   | viewer123   |
+<h2>API Overview</h2>
 
-## API Overview
+<h3>Authentication</h3>
+<ul>
+  <li><code>POST /users/login</code> — Get JWT token</li>
+  <li><code>POST /users/register</code> — Create user (Admin only)</li>
+  <li><code>GET /users/me</code> — View own profile</li>
+</ul>
 
-### Auth
-- `POST /users/login` — Get JWT token
-- `POST /users/register` — Create user (Admin only)
-- `GET /users/me` — View own profile
+<h3>Transactions</h3>
+<ul>
+  <li><code>POST /transactions/</code> — Create record (Admin only)</li>
+  <li><code>GET /transactions/</code> — List records with filters:
+    <code>category</code>, <code>type</code>, <code>start_date</code>, <code>end_date</code>,
+    <code>limit</code>, <code>offset</code>
+  </li>
+  <li><code>GET /transactions/{id}</code> — Get single record</li>
+  <li><code>PUT /transactions/{id}</code> — Update record (Admin only)</li>
+  <li><code>DELETE /transactions/{id}</code> — Delete record (Admin only)</li>
+</ul>
 
-### Transactions
-- `POST /transactions/` — Create record (Admin only)
-- `GET /transactions/` — List with filters: `category`, `type`, `start_date`, `end_date`, `limit`, `offset`
-- `GET /transactions/{id}` — Get single record
-- `PUT /transactions/{id}` — Update record (Admin only)
-- `DELETE /transactions/{id}` — Delete record (Admin only)
+<h3>Dashboard</h3>
+<ul>
+  <li><code>GET /dashboard/summary</code> — Total income, expenses, and net balance</li>
+  <li><code>GET /dashboard/category-breakdown</code> — Category-wise totals (Analyst, Admin)</li>
+  <li><code>GET /dashboard/monthly-trends</code> — Monthly income vs expense (Analyst, Admin)</li>
+</ul>
 
-### Dashboard
-- `GET /dashboard/summary` — Total income, expenses, net balance (all roles)
-- `GET /dashboard/category-breakdown` — Category-wise totals (Analyst, Admin)
-- `GET /dashboard/monthly-trends` — Monthly income vs expense (Analyst, Admin)
+<h2>Role Permissions</h2>
 
-## Role Permissions
+<table>
+  <thead>
+    <tr>
+      <th>Action</th>
+      <th>Viewer</th>
+      <th>Analyst</th>
+      <th>Admin</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>View summary</td>
+      <td>Yes</td>
+      <td>Yes</td>
+      <td>Yes</td>
+    </tr>
+    <tr>
+      <td>View transactions</td>
+      <td>Yes</td>
+      <td>Yes</td>
+      <td>Yes</td>
+    </tr>
+    <tr>
+      <td>Category breakdown</td>
+      <td>No</td>
+      <td>Yes</td>
+      <td>Yes</td>
+    </tr>
+    <tr>
+      <td>Monthly trends</td>
+      <td>No</td>
+      <td>Yes</td>
+      <td>Yes</td>
+    </tr>
+    <tr>
+      <td>Create/Edit/Delete</td>
+      <td>No</td>
+      <td>No</td>
+      <td>Yes</td>
+    </tr>
+    <tr>
+      <td>Manage users</td>
+      <td>No</td>
+      <td>No</td>
+      <td>Yes</td>
+    </tr>
+  </tbody>
+</table>
 
-| Action              | Viewer | Analyst | Admin |
-|---------------------|--------|---------|-------|
-| View summary        | Yes    | Yes     | Yes   |
-| View transactions   | Yes    | Yes     | Yes   |
-| Category breakdown  | No     | Yes     | Yes   |
-| Monthly trends      | No     | Yes     | Yes   |
-| Create/Edit/Delete  | No     | No      | Yes   |
-| Manage users        | No     | No      | Yes   |
-
-## What I'd Add With More Time
-
-- Refresh tokens for better auth flow
-- Soft delete instead of hard delete
-- Unit tests with pytest
-- Rate limiting on login endpoint
-- Environment-based config (dev/staging/prod)
+<h2>What I Would Add With More Time</h2>
+<ul>
+  <li>Refresh tokens for a better authentication flow</li>
+  <li>Soft delete instead of hard delete</li>
+  <li>Unit tests with pytest</li>
+  <li>Rate limiting on the login endpoint</li>
+  <li>Environment-based configuration for dev, staging, and production</li>
+</ul>
