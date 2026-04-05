@@ -12,29 +12,29 @@ from app.database import get_db
 from app.models import User
 
 
-# Secret used to sign JWTs and in production this must come from environment/config, not source control.
+# JWT signing settings and SECRET_KEY must come from environment/config in real deployments.
 SECRET_KEY = os.getenv("SECRET_KEY", "change-me-in-production")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-# Password hashing setup as bcrypt is standard for user passwords and keeps raw passwords out of storage.
+# Password hashing config and raw passwords should never be stored directly in the database.
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# Reads bearer tokens from Authorization headers and fastAPI docs also use this token URL for the auth flow.
+# Reads bearer token from Authorization header and FastAPI docs use tokenUrl to know which login endpoint issues tokens.
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/login")
 
 
-# Called when a user is created or when a password is changed.
+# Used when creating a user or updating a password.
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
 
-# Called during login to compare the plain password with the stored hash.
+# Used during login to compare the submitted password with the stored hash.
 def verify_password(plain: str, hashed: str) -> bool:
     return pwd_context.verify(plain, hashed)
 
 
-# Builds the JWT sent back after login and the frontend stores this token and sends it on later protected requests.
+# Creates the JWT sent back after a successful login so the frontend includes this token on later protected requests.
 def create_access_token(data: dict) -> str:
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -42,13 +42,14 @@ def create_access_token(data: dict) -> str:
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
-# Core auth dependency used by protected routes flow:
-# 1. read bearer token
-# 2. decode JWT
-# 3. load current user from DB
-# 4. reject disabled or missing accounts
-# 5. return full user object to the route
-# This DB lookup matters because a still-valid token should not bypass later account deactivation.
+# Main auth dependency shared by protected route and runtime flow:
+# - read bearer token
+# - decode it
+# - get username from the sub claim
+# - load current user from DB
+# - reject missing or inactive accounts
+# - return the User model instance to the route/dependency chain
+# The DB lookup matters because a user might still hold an unexpired token after being disabled.
 def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
@@ -71,8 +72,7 @@ def get_current_user(
     if user is None:
         raise credentials_exception
 
-    # Keep invalid-token and inactive-account cases separate.
-    # Missing/invalid identity is 401, known but disabled account is 403.
+    # Keep auth failure and disabled-account failure separate so the missing/invalid identity is 401. Known but inactive account is 403.
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -82,7 +82,7 @@ def get_current_user(
     return user
 
 
-# Simple reusable permission gate and routes wrap this around get_current_user so auth and role checks stay separate.
+# Reusable role gate layered on top of get_current_user and This keeps authentication and authorization as separate steps.
 class RoleChecker:
     def __init__(self, allowed_roles: List[str]):
         self.allowed_roles = allowed_roles
