@@ -1,16 +1,15 @@
-from app.database import SessionLocal
+from app.database import SessionLocal, engine, Base
 from app.models import User, Transaction
 from app.auth import hash_password
 from datetime import datetime, timedelta
 
 
 def seed():
+    Base.metadata.create_all(bind=engine)
+
     db = SessionLocal()
 
     try:
-        # ----------------------
-        # Create Admin User
-        # ----------------------
         admin = db.query(User).filter(User.username == "admin").first()
 
         if not admin:
@@ -27,9 +26,6 @@ def seed():
         else:
             print("Admin already exists")
 
-    
-        # Create Sample Users
-        
         sample_users = [
             {
                 "username": "analyst1",
@@ -61,36 +57,13 @@ def seed():
 
         db.commit()
 
-        
-        # Create Sample Transactions
-    
         now = datetime.utcnow()
 
         transactions = [
-            {
-                "amount": 5000,
-                "type": "income",
-                "category": "salary",
-                "days_ago": 10
-            },
-            {
-                "amount": 2000,
-                "type": "expense",
-                "category": "food",
-                "days_ago": 5
-            },
-            {
-                "amount": 1500,
-                "type": "expense",
-                "category": "travel",
-                "days_ago": 2
-            },
-            {
-                "amount": 3000,
-                "type": "income",
-                "category": "freelance",
-                "days_ago": 1
-            }
+            {"amount": 5000, "type": "income", "category": "salary", "days_ago": 10},
+            {"amount": 2000, "type": "expense", "category": "food", "days_ago": 5},
+            {"amount": 1500, "type": "expense", "category": "travel", "days_ago": 2},
+            {"amount": 3000, "type": "income", "category": "freelance", "days_ago": 1}
         ]
 
         for t in transactions:
@@ -106,10 +79,15 @@ def seed():
 
         db.commit()
         print("Sample transactions added")
+        print("Database seeding completed successfully!")
+
+    except Exception as e:
+        db.rollback()
+        print(f"Seeding failed: {e}")
+        raise
 
     finally:
         db.close()
-        print("Database seeding completed successfully!")
 
 
 if __name__ == "__main__":
