@@ -4,8 +4,7 @@ from datetime import datetime
 from typing import Literal
 
 
-# User-side request/response shapes These schemas control what the API accepts and what it returns.
-# basically In a real-time project, this gives the frontend a stable contract.
+# User-side request/response shapes These schemas control what the API accepts and what it returns so basically In a real-time project, this gives the frontend a stable contract.
 
 class UserCreate(BaseModel):
     username: str
@@ -136,3 +135,31 @@ class TransactionResponse(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+
+class RecentActivityResponse(BaseModel):
+    id: int
+    amount: float
+    type: str
+    category: str
+    date: datetime
+    notes: str | None
+    created_by: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+@router.get("/recent-activity", response_model=list[RecentActivityResponse])
+def get_recent_activity(
+    limit: int = Query(10, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(RoleChecker(["analyst", "admin"]))
+):
+    return (
+        db.query(Transaction)
+        .order_by(Transaction.date.desc(), Transaction.created_at.desc())
+        .limit(limit)
+        .all()
+    )

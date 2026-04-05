@@ -18,7 +18,8 @@ def get_summary(
     start_date: Optional[datetime] = Query(None),
     end_date: Optional[datetime] = Query(None)
 ):
-    #Returns total income, total expenses, and net balance  
+    # Summary endpoint for top-level dashboard cards.
+    # This is the kind of route the frontend can call on page load to populate total income, total expense, net balance, and count and optional date filters let the UI switch between overall view, monthly range, custom range, or reporting windows.
 
     base_query = db.query(Transaction)
     if start_date:
@@ -26,6 +27,7 @@ def get_summary(
     if end_date:
         base_query = base_query.filter(Transaction.date <= end_date)
 
+    # Split the same base dataset into income and expense totals and coalesce avoids None when no matching rows exist.
     total_income = base_query.filter(Transaction.type == "income").with_entities(
         func.coalesce(func.sum(Transaction.amount), 0)
     ).scalar()
@@ -42,13 +44,43 @@ def get_summary(
     }
 
 
+@router.get("/recent-activity")
+def get_recent_activity(
+    limit: int = Query(10, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(RoleChecker(["analyst", "admin"]))
+):
+    # Feed endpoint for latest transaction activity which is useful for dashboard tables, activity streams, or audit-style recent lists and ordered first by business date, then by record creation time so latest relevant finance events appear first.
+    records = (
+        db.query(Transaction)
+        .order_by(Transaction.date.desc(), Transaction.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+
+    # Manual shaping keeps response small and avoids leaking unwanted ORM fields.
+    return [
+        {
+            "id": txn.id,
+            "amount": round(txn.amount, 2),
+            "type": txn.type,
+            "category": txn.category,
+            "date": txn.date,
+            "notes": txn.notes,
+            "created_by": txn.created_by,
+            "created_at": txn.created_at
+        }
+        for txn in records
+    ]
+
+
 @router.get("/category-breakdown")
 def get_category_breakdown(
     db: Session = Depends(get_db),
     current_user: User = Depends(RoleChecker(["analyst", "admin"])),
     type: Optional[str] = Query(None, description="Filter by income or expense")
 ):
-    # Group totals by category. Analysts and admins only — viewers see the summary.
+    # Breakdown endpoint for pie charts, grouped tables, and spend/income analysis so that analysts/admins get access because this is a more detailed cut of the data than the simple viewer summary.
     query = db.query(
         Transaction.category,
         Transaction.type,
@@ -57,6 +89,7 @@ def get_category_breakdown(
     )
 
     if type:
+        # Narrow results to one side of the ledger when the UI requests it.
         query = query.filter(Transaction.type == type)
 
     results = query.group_by(Transaction.category, Transaction.type).all()
@@ -77,8 +110,7 @@ def get_monthly_trends(
     db: Session = Depends(get_db),
     current_user: User = Depends(RoleChecker(["analyst", "admin"]))
 ):
-    # Monthly income vs expense trends.
-
+    # Trend endpoint for charts which groups records by month and transaction type so the frontend can render, income vs expense movement across time which current current query uses strftime and  works well on SQLite.
     results = db.query(
         func.strftime("%Y-%m", Transaction.date).label("month"),
         Transaction.type,
