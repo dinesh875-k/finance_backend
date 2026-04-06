@@ -1,8 +1,7 @@
 <h1>Finance Dashboard API</h1>
 
 <p>
-  A backend API for managing financial records with role-based access control,
-  built for the Zorvyn Backend Intern assessment.
+  A backend API for managing financial records with role-based access control.
 </p>
 
 <h2>Project Summary</h2>
@@ -35,7 +34,7 @@
     involve changing the connection URL.
   </li>
   <li>
-    <strong>JWT Authentication</strong> — Authentication uses JWT access tokens. For this assignment,
+    <strong>JWT Authentication</strong> — Authentication uses JWT access tokens. For this assessment,
     I kept the flow simple and practical. In a production version, I would extend this with refresh tokens and better token lifecycle handling.
   </li>
   <li>
@@ -44,7 +43,7 @@
   </li>
 </ul>
 
-<h2>Assignment Mapping</h2>
+<h2>Mapping</h2>
 <ul>
   <li>User creation and role-based restriction</li>
   <li>User listing, role updates, and active/inactive status management</li>
@@ -60,7 +59,7 @@
 
 <h2>Quick Start</h2>
 
-<pre><code>git clone &lt;your-repo-url&gt;
+<pre><code>git clone &lt;https://github.com/dinesh875-k/finance_backend.git&gt;
 cd finance_backend
 pip install -r requirements.txt
 python seed.py

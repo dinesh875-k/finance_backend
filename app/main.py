@@ -16,3 +16,4 @@ app.include_router(dashboard.router)
 @app.get("/")
 def root():
     return {"message": "Finance API is running "}
+

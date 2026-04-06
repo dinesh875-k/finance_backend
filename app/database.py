@@ -1,14 +1,17 @@
+import os
+from pathlib import Path
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-DATABASE_URL = "sqlite:///./finance.db"
-#connecting to the database
-engine= create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+BASE_DIR = Path(__file__).resolve().parent
+DEFAULT_DB_PATH = BASE_DIR / "finance.db"
 
-#creating a session for handling database operations
+DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DEFAULT_DB_PATH}")
+
+connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+
+engine = create_engine(DATABASE_URL, connect_args=connect_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-#creating a base class for our models to inherit from and define the structure of our database tables
 Base = declarative_base()
 
 
