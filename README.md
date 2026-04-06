@@ -4,17 +4,23 @@
   A backend API for managing financial records with role-based access control.
 </p>
 
+<h2>Live Deployment</h2>
+<ul>
+  <li><strong>Base URL:</strong> <code>https://financebackend-production-012d.up.railway.app/</code></li>
+  <li><strong>Swagger Docs:</strong> <code>https://financebackend-production-012d.up.railway.app/docs</code></li>
+</ul>
+
 <h2>Project Summary</h2>
 <p>
   This project is a backend-only finance dashboard system. It focuses on API design,
   financial record management, validation, access control, and summary analytics.
-  The goal was to build a clean and maintainable backend that can later serve a frontend dashboard if needed.
+  The goal was to build a clean and maintainable backend that can serve a frontend dashboard if needed.
 </p>
 
 <h2>Current Status</h2>
 <ul>
   <li>Database seeding is working.</li>
-  <li>JWT login is working from Swagger UI.</li>
+  <li>JWT login is working locally and on Railway deployment.</li>
   <li>Role-based access control is working for Admin, Analyst, and Viewer roles.</li>
   <li>Financial transaction CRUD and filtering are implemented.</li>
   <li>Dashboard summary, category breakdown, monthly trends, and recent activity endpoints are implemented.</li>
@@ -30,11 +36,10 @@
   </li>
   <li>
     <strong>SQLite</strong> — I used SQLite to keep setup simple. The project can be cloned and run locally
-    without Docker or an external database. Since the app uses SQLAlchemy, switching to PostgreSQL later would mainly
-    involve changing the connection URL.
+    without Docker or an external database. For deployment, SQLite is persisted through Railway volume storage.
   </li>
   <li>
-    <strong>JWT Authentication</strong> — Authentication uses JWT access tokens. For this assessment,
+    <strong>JWT Authentication</strong> — Authentication uses JWT access tokens. For this assignment,
     I kept the flow simple and practical. In a production version, I would extend this with refresh tokens and better token lifecycle handling.
   </li>
   <li>
@@ -65,7 +70,7 @@ pip install -r requirements.txt
 python seed.py
 uvicorn app.main:app --reload</code></pre>
 
-<p><strong>Swagger Docs:</strong> <code>http://127.0.0.1:8000/docs</code></p>
+<p><strong>Local Swagger Docs:</strong> <code>http://127.0.0.1:8000/docs</code></p>
 
 <h2>Seeded Test Credentials</h2>
 
@@ -227,6 +232,14 @@ uvicorn app.main:app --reload</code></pre>
   <li>Duplicate username or email returns <code>409 Conflict</code>.</li>
 </ul>
 
+<h2>Deployment Notes</h2>
+<ul>
+  <li>Deployed on <strong>Railway</strong>.</li>
+  <li>Environment variables are used for <code>SECRET_KEY</code> and <code>DATABASE_URL</code>.</li>
+  <li>SQLite persistence is handled through Railway volume storage.</li>
+  <li>The deployed database was seeded using <code>python seed.py</code>.</li>
+</ul>
+
 <h2>Notes</h2>
 <ul>
   <li>This project does not include a frontend dashboard UI.</li>
@@ -237,17 +250,10 @@ uvicorn app.main:app --reload</code></pre>
 
 <h2>What I Would Improve With More Time</h2>
 <ul>
-  <li>Move secret key and config into environment variables.</li>
   <li>Add refresh tokens.</li>
   <li>Add soft delete support.</li>
   <li>Add unit tests with pytest.</li>
   <li>Add rate limiting on the login endpoint.</li>
   <li>Add a minimal frontend or template-based dashboard.</li>
+  <li>Refine environment-based configuration further for staging and production separation.</li>
 </ul>
-
-<h2>Repository Notes</h2>
-<p>
-  This repository is intended to demonstrate backend design, access control, API structure,
-  and business logic clearly rather than build a production-ready finance platform.
-  The implementation favors simplicity, readability, and direct evaluation.
-</p>
